@@ -1,6 +1,6 @@
 package com.tp1cicd;
 
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,13 +27,13 @@ class StudentControllerPutDeleteTest {
     @Autowired
     private StudentStore studentStore;
 
-    @AfterEach
+    @BeforeEach
     void resetData() {
         this.studentStore.reset();
     }
 
     @Test
-    void shouldUpdateStudent() {
+    void shouldReturn200AndUpdatedStudentForValidPut() {
         final StudentRequest request = new StudentRequest(
             "Alice",
             "Martin",
@@ -52,31 +52,32 @@ class StudentControllerPutDeleteTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().email()).isEqualTo("alice.updated@example.com");
+        assertThat(response.getBody().grade()).isEqualTo(16.0);
     }
 
     @Test
-    void shouldRejectDuplicateEmailDuringUpdate() {
+    void shouldReturn404ForPutOnUnknownId() {
         final StudentRequest request = new StudentRequest(
             "Alice",
             "Martin",
-            "nora.petit@example.com",
+            "alice.updated@example.com",
             16.0,
             "informatique"
         );
 
         final ResponseEntity<Map> response = this.restTemplate.exchange(
-            url("/students/1"),
+            url("/students/999"),
             HttpMethod.PUT,
             new HttpEntity<>(request),
             Map.class
         );
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).containsKey("error");
     }
 
     @Test
-    void shouldDeleteStudent() {
+    void shouldReturn200ForDeleteOnValidId() {
         final ResponseEntity<Map> response = this.restTemplate.exchange(
             url("/students/1"),
             HttpMethod.DELETE,
@@ -89,7 +90,7 @@ class StudentControllerPutDeleteTest {
     }
 
     @Test
-    void shouldReturnNotFoundWhenDeletingMissingStudent() {
+    void shouldReturn404ForDeleteOnUnknownId() {
         final ResponseEntity<Map> response = this.restTemplate.exchange(
             url("/students/999"),
             HttpMethod.DELETE,
