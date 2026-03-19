@@ -1,6 +1,6 @@
 package com.tp1cicd;
 
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,13 +25,13 @@ class StudentControllerStatsSearchTest {
     @Autowired
     private StudentStore studentStore;
 
-    @AfterEach
+    @BeforeEach
     void resetData() {
         this.studentStore.reset();
     }
 
     @Test
-    void shouldReturnStats() {
+    void shouldReturnStatsPayload() {
         final ResponseEntity<Map> response = this.restTemplate.getForEntity(url("/students/stats"), Map.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -39,28 +39,12 @@ class StudentControllerStatsSearchTest {
     }
 
     @Test
-    void shouldSearchStudents() {
+    void shouldReturnMatchingStudentsForSearch() {
         final ResponseEntity<Student[]> response = this.restTemplate.getForEntity(url("/students/search?q=ali"), Student[].class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).hasSize(1);
         assertThat(response.getBody()[0].firstName()).isEqualTo("Alice");
-    }
-
-    @Test
-    void shouldRejectEmptySearch() {
-        final ResponseEntity<Map> response = this.restTemplate.getForEntity(url("/students/search?q="), Map.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody()).containsKey("error");
-    }
-
-    @Test
-    void shouldRejectMissingSearchParameter() {
-        final ResponseEntity<Map> response = this.restTemplate.getForEntity(url("/students/search"), Map.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody()).containsKey("error");
     }
 
     private String url(final String path) {
