@@ -8,10 +8,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.Map;
@@ -44,7 +44,7 @@ public class StudentController {
 
     @GetMapping("/search")
     public List<Student> searchStudents(@RequestParam(name = "q") final String query) {
-        if (query.isBlank()) {
+        if (query == null || query.isBlank()) {
             throw new IllegalArgumentException("Le parametre q ne doit pas etre vide");
         }
         return this.studentStore.search(query);

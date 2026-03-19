@@ -24,7 +24,7 @@ public record Student(
     @DecimalMax("20.0")
     Double grade,
     @NotBlank
-    @Pattern(regexp = "informatique|math\\u00E9matiques|physique|chimie")
+    @Pattern(regexp = "informatique|math\u00E9matiques|physique|chimie")
     String field
 ) {
 }

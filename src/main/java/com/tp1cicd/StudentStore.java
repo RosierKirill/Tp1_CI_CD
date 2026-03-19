@@ -83,6 +83,13 @@ public class StudentStore {
         this.students.remove(index);
     }
 
+    public synchronized List<Student> search(final String query) {
+        final String normalizedQuery = query.toLowerCase(Locale.ROOT);
+        return this.students.stream()
+            .filter(student -> matchesQuery(student, normalizedQuery))
+            .toList();
+    }
+
     public synchronized StudentStats getStats() {
         final int totalStudents = this.students.size();
         final double averageGrade = totalStudents == 0
@@ -98,13 +105,6 @@ public class StudentStore {
             .orElse(null);
 
         return new StudentStats(totalStudents, averageGrade, studentsByField, bestStudent);
-    }
-
-    public synchronized List<Student> search(final String query) {
-        final String normalizedQuery = query.toLowerCase(Locale.ROOT);
-        return this.students.stream()
-            .filter(student -> matchesQuery(student, normalizedQuery))
-            .toList();
     }
 
     public synchronized void reset() {

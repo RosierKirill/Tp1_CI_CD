@@ -30,8 +30,8 @@ public class ApiExceptionHandler {
         IllegalArgumentException.class,
         HttpMessageNotReadableException.class,
         MethodArgumentNotValidException.class,
-        MissingServletRequestParameterException.class,
-        MethodArgumentTypeMismatchException.class
+        MethodArgumentTypeMismatchException.class,
+        MissingServletRequestParameterException.class
     })
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleBadRequest(final Exception exception) {
@@ -45,11 +45,11 @@ public class ApiExceptionHandler {
                 .map(fieldError -> fieldError.getField() + " " + fieldError.getDefaultMessage())
                 .orElse("Requete invalide");
         }
-        if (exception instanceof HttpMessageNotReadableException messageNotReadableException) {
-            return "Le corps de la requete est invalide";
-        }
         if (exception instanceof MethodArgumentTypeMismatchException mismatchException) {
             return "L'id doit etre un nombre valide";
+        }
+        if (exception instanceof HttpMessageNotReadableException messageNotReadableException) {
+            return "Le corps de la requete est invalide";
         }
         if (exception instanceof MissingServletRequestParameterException missingParameterException) {
             return "Le parametre " + missingParameterException.getParameterName() + " est requis";
