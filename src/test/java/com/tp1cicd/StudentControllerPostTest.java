@@ -1,12 +1,15 @@
 package com.tp1cicd;
 
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Map;
@@ -25,13 +28,13 @@ class StudentControllerPostTest {
     @Autowired
     private StudentStore studentStore;
 
-    @AfterEach
+    @BeforeEach
     void resetData() {
         this.studentStore.reset();
     }
 
     @Test
-    void shouldCreateStudent() {
+    void shouldReturn201AndCreatedStudentForValidPost() {
         final StudentRequest request = new StudentRequest(
             "Emma",
             "Moreau",
@@ -49,13 +52,12 @@ class StudentControllerPostTest {
     }
 
     @Test
-    void shouldRejectInvalidPayload() {
-        final StudentRequest request = new StudentRequest(
-            "E",
-            "M",
-            "invalid-email",
-            25.0,
-            "biologie"
+    void shouldReturn400WhenRequiredFieldIsMissing() {
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        final HttpEntity<String> request = new HttpEntity<>(
+            "{\"firstName\":\"Emma\",\"lastName\":\"Moreau\",\"grade\":14.0,\"field\":\"chimie\"}",
+            headers
         );
 
         final ResponseEntity<Map> response = this.restTemplate.postForEntity(url("/students"), request, Map.class);
@@ -65,7 +67,23 @@ class StudentControllerPostTest {
     }
 
     @Test
-    void shouldRejectDuplicateEmail() {
+    void shouldReturn400WhenGradeIsInvalid() {
+        final StudentRequest request = new StudentRequest(
+            "Emma",
+            "Moreau",
+            "emma.moreau@example.com",
+            25.0,
+            "chimie"
+        );
+
+        final ResponseEntity<Map> response = this.restTemplate.postForEntity(url("/students"), request, Map.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).containsKey("error");
+    }
+
+    @Test
+    void shouldReturn409WhenEmailAlreadyExists() {
         final StudentRequest request = new StudentRequest(
             "Emma",
             "Moreau",
