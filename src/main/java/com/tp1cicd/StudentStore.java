@@ -5,9 +5,14 @@ import jakarta.validation.Validator;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Service
 public class StudentStore {
@@ -25,11 +30,18 @@ public class StudentStore {
         return List.copyOf(this.students);
     }
 
+    public synchronized Student findById(final int id) {
+        return this.students.stream()
+            .filter(student -> student.id() == id)
+            .findFirst()
+            .orElseThrow(() -> new StudentNotFoundException(id));
+    }
+
     public synchronized Student add(final Student student) {
         validate(student);
 
         if (emailExists(student.email())) {
-            throw new IllegalArgumentException("L'email doit etre unique");
+            throw new EmailAlreadyUsedException(student.email());
         }
 
         final Student storedStudent = new Student(
@@ -42,6 +54,57 @@ public class StudentStore {
         );
         this.students.add(storedStudent);
         return storedStudent;
+    }
+
+    public synchronized Student update(final int id, final Student student) {
+        validate(student);
+
+        final int index = findIndexById(id);
+        final Student existingStudent = this.students.get(index);
+
+        if (emailExistsForAnotherStudent(student.email(), id)) {
+            throw new EmailAlreadyUsedException(student.email());
+        }
+
+        final Student updatedStudent = new Student(
+            existingStudent.id(),
+            student.firstName(),
+            student.lastName(),
+            student.email(),
+            student.grade(),
+            student.field()
+        );
+        this.students.set(index, updatedStudent);
+        return updatedStudent;
+    }
+
+    public synchronized void delete(final int id) {
+        final int index = findIndexById(id);
+        this.students.remove(index);
+    }
+
+    public synchronized List<Student> search(final String query) {
+        final String normalizedQuery = query.toLowerCase(Locale.ROOT);
+        return this.students.stream()
+            .filter(student -> matchesQuery(student, normalizedQuery))
+            .toList();
+    }
+
+    public synchronized StudentStats getStats() {
+        final int totalStudents = this.students.size();
+        final double averageGrade = totalStudents == 0
+            ? 0.0
+            : Math.round(this.students.stream()
+                .mapToDouble(Student::grade)
+                .average()
+                .orElse(0.0) * 100.0) / 100.0;
+        final Map<String, Long> studentsByField = this.students.stream()
+            .collect(Collectors.groupingBy(Student::field, LinkedHashMap::new, Collectors.counting()));
+        final Student bestStudent = this.students.stream()
+            .max(Comparator.comparingDouble(Student::grade))
+            .orElse(null);
+
+        return new StudentStats(totalStudents, averageGrade, studentsByField, bestStudent);
     }
 
     public synchronized void reset() {
@@ -66,5 +129,24 @@ public class StudentStore {
         return this.students.stream()
             .map(Student::email)
             .anyMatch(existingEmail -> existingEmail.equalsIgnoreCase(email));
+    }
+
+    private boolean emailExistsForAnotherStudent(final String email, final int id) {
+        return this.students.stream()
+            .anyMatch(student -> student.id() != id && student.email().equalsIgnoreCase(email));
+    }
+
+    private int findIndexById(final int id) {
+        for (int index = 0; index < this.students.size(); index++) {
+            if (this.students.get(index).id() == id) {
+                return index;
+            }
+        }
+        throw new StudentNotFoundException(id);
+    }
+
+    private boolean matchesQuery(final Student student, final String query) {
+        return student.firstName().toLowerCase(Locale.ROOT).contains(query)
+            || student.lastName().toLowerCase(Locale.ROOT).contains(query);
     }
 }

@@ -8,8 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-public record Student(
-    Integer id,
+public record StudentRequest(
     @NotBlank
     @Size(min = 2)
     String firstName,
@@ -27,4 +26,7 @@ public record Student(
     @Pattern(regexp = "informatique|math\u00E9matiques|physique|chimie")
     String field
 ) {
+    public Student toStudent() {
+        return new Student(null, this.firstName, this.lastName, this.email, this.grade, this.field);
+    }
 }
