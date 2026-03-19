@@ -18,6 +18,13 @@ Les donnees sont stockees en memoire et reinitialisees a chaque redemarrage.
 ## Endpoint de verification
 
 - `GET /` retourne `API TP1 CI/CD OK`
+- `GET /students` retourne la liste des etudiants
+- `GET /students/{id}` retourne un etudiant
+- `POST /students` cree un etudiant
+- `PUT /students/{id}` met a jour un etudiant
+- `DELETE /students/{id}` supprime un etudiant
+- `GET /students/stats` retourne les statistiques
+- `GET /students/search?q=...` recherche par nom ou prenom
 
 ## Donnees initiales
 

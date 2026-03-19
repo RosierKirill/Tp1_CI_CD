@@ -5,9 +5,14 @@ import jakarta.validation.Validator;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Service
 public class StudentStore {
@@ -78,6 +83,30 @@ public class StudentStore {
         this.students.remove(index);
     }
 
+    public synchronized StudentStats getStats() {
+        final int totalStudents = this.students.size();
+        final double averageGrade = totalStudents == 0
+            ? 0.0
+            : Math.round(this.students.stream()
+                .mapToDouble(Student::grade)
+                .average()
+                .orElse(0.0) * 100.0) / 100.0;
+        final Map<String, Long> studentsByField = this.students.stream()
+            .collect(Collectors.groupingBy(Student::field, LinkedHashMap::new, Collectors.counting()));
+        final Student bestStudent = this.students.stream()
+            .max(Comparator.comparingDouble(Student::grade))
+            .orElse(null);
+
+        return new StudentStats(totalStudents, averageGrade, studentsByField, bestStudent);
+    }
+
+    public synchronized List<Student> search(final String query) {
+        final String normalizedQuery = query.toLowerCase(Locale.ROOT);
+        return this.students.stream()
+            .filter(student -> matchesQuery(student, normalizedQuery))
+            .toList();
+    }
+
     public synchronized void reset() {
         this.students.clear();
         this.nextId.set(1);
@@ -114,5 +143,10 @@ public class StudentStore {
             }
         }
         throw new StudentNotFoundException(id);
+    }
+
+    private boolean matchesQuery(final Student student, final String query) {
+        return student.firstName().toLowerCase(Locale.ROOT).contains(query)
+            || student.lastName().toLowerCase(Locale.ROOT).contains(query);
     }
 }
