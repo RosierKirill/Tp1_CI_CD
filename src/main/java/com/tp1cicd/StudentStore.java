@@ -25,6 +25,13 @@ public class StudentStore {
         return List.copyOf(this.students);
     }
 
+    public synchronized Student findById(final int id) {
+        return this.students.stream()
+            .filter(student -> student.id() == id)
+            .findFirst()
+            .orElseThrow(() -> new StudentNotFoundException(id));
+    }
+
     public synchronized Student add(final Student student) {
         validate(student);
 
