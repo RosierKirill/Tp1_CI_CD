@@ -51,6 +51,33 @@ public class StudentStore {
         return storedStudent;
     }
 
+    public synchronized Student update(final int id, final Student student) {
+        validate(student);
+
+        final int index = findIndexById(id);
+        final Student existingStudent = this.students.get(index);
+
+        if (emailExistsForAnotherStudent(student.email(), id)) {
+            throw new EmailAlreadyUsedException(student.email());
+        }
+
+        final Student updatedStudent = new Student(
+            existingStudent.id(),
+            student.firstName(),
+            student.lastName(),
+            student.email(),
+            student.grade(),
+            student.field()
+        );
+        this.students.set(index, updatedStudent);
+        return updatedStudent;
+    }
+
+    public synchronized void delete(final int id) {
+        final int index = findIndexById(id);
+        this.students.remove(index);
+    }
+
     public synchronized void reset() {
         this.students.clear();
         this.nextId.set(1);
@@ -73,5 +100,19 @@ public class StudentStore {
         return this.students.stream()
             .map(Student::email)
             .anyMatch(existingEmail -> existingEmail.equalsIgnoreCase(email));
+    }
+
+    private boolean emailExistsForAnotherStudent(final String email, final int id) {
+        return this.students.stream()
+            .anyMatch(student -> student.id() != id && student.email().equalsIgnoreCase(email));
+    }
+
+    private int findIndexById(final int id) {
+        for (int index = 0; index < this.students.size(); index++) {
+            if (this.students.get(index).id() == id) {
+                return index;
+            }
+        }
+        throw new StudentNotFoundException(id);
     }
 }
