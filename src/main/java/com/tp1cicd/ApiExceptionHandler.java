@@ -1,6 +1,8 @@
 package com.tp1cicd;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -17,9 +19,36 @@ public class ApiExceptionHandler {
         return Map.of("error", exception.getMessage());
     }
 
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ExceptionHandler(EmailAlreadyUsedException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public Map<String, String> handleEmailAlreadyUsed(final EmailAlreadyUsedException exception) {
+        return Map.of("error", exception.getMessage());
+    }
+
+    @ExceptionHandler({
+        IllegalArgumentException.class,
+        HttpMessageNotReadableException.class,
+        MethodArgumentNotValidException.class,
+        MethodArgumentTypeMismatchException.class
+    })
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, String> handleTypeMismatch(final MethodArgumentTypeMismatchException exception) {
-        return Map.of("error", "L'id doit etre un nombre valide");
+    public Map<String, String> handleBadRequest(final Exception exception) {
+        return Map.of("error", resolveMessage(exception));
+    }
+
+    private String resolveMessage(final Exception exception) {
+        if (exception instanceof MethodArgumentNotValidException validationException) {
+            return validationException.getBindingResult().getFieldErrors().stream()
+                .findFirst()
+                .map(fieldError -> fieldError.getField() + " " + fieldError.getDefaultMessage())
+                .orElse("Requete invalide");
+        }
+        if (exception instanceof HttpMessageNotReadableException messageNotReadableException) {
+            return "Le corps de la requete est invalide";
+        }
+        if (exception instanceof MethodArgumentTypeMismatchException mismatchException) {
+            return "L'id doit etre un nombre valide";
+        }
+        return exception.getMessage();
     }
 }

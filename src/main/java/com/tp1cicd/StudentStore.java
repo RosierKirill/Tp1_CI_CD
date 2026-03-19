@@ -36,7 +36,7 @@ public class StudentStore {
         validate(student);
 
         if (emailExists(student.email())) {
-            throw new IllegalArgumentException("L'email doit etre unique");
+            throw new EmailAlreadyUsedException(student.email());
         }
 
         final Student storedStudent = new Student(
