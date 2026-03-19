@@ -2,6 +2,8 @@
 
 Projet initialise en Java avec Spring Boot, JUnit 5 et Checkstyle.
 
+Les donnees sont stockees en memoire et reinitialisees a chaque redemarrage.
+
 ## Prerequis
 
 - Java 17
@@ -16,6 +18,10 @@ Projet initialise en Java avec Spring Boot, JUnit 5 et Checkstyle.
 ## Endpoint de verification
 
 - `GET /` retourne `API TP1 CI/CD OK`
+
+## Donnees initiales
+
+Le stockage en memoire est pre-rempli avec 5 etudiants de test, avec une fonction `reset()` dans le service `StudentStore`.
 
 ## CI
 
